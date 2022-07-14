@@ -1,0 +1,40 @@
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+ packages: write
+ contents: write
+ 
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 20
+      matrix:
+        tag: ['${RUN}', 'latest']
+        run: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
+        
+        
+
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
+      RUN: ${{ matrix.run }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Create a Dockerfile
+        run: |
+          echo 'FROM node' > Dockerfile
+          echo 'ENTRYPOINT ["echo", "Hello from ${{ github.repository }}!"] How are you?' >> Dockerfile
+          echo 'LABEL org.opencontainers.image.description "This image was built from commit ${{ github.sha }}"' >> Dockerfile
+      - name: Build image
+        run: docker build . -t ${IMAGE,,}:${{ matrix.tag }} # lowercase IMAGE
+
+      - name: Login to ghcr.io
+        run: docker login https://ghcr.io -u token --password-stdin <<< ${{ github.token }}
+
+      - name: Publish image
+        run: docker push ${IMAGE,,}:${{ matrix.tag }} # lowercase IMAGE
